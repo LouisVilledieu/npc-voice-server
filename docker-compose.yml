@@ -1,0 +1,15 @@
+services:
+  vocal_rpg_server:
+    build: .
+    container_name: vocal_rpg_server
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - TRANSCRIBE_PROVIDER=${TRANSCRIBE_PROVIDER:-local}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - TTS_PROVIDER=${TTS_PROVIDER:-elevenlabs}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./audio_outputs:/app/audio_outputs 
