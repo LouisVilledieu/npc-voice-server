@@ -10,6 +10,10 @@ from pydantic import BaseModel, Field
 from whisper_utils import save_base64_to_tempfile, transcribe
 from llm_utils import generate_npc_response
 from tts_utils import synthesize_speech
+from db_utils import close_connection, get_db
+from users_routes import router as users_router
+from npc_routes import router as npcs_router, Npc
+from users_routes import User
 
 import logging
 
@@ -26,6 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(users_router)
+app.include_router(npcs_router)
 
 class NpcInteractionRequest(BaseModel):
     npc_id: str = Field(..., description="NPC identifier")
@@ -100,7 +106,7 @@ async def npc_interaction(payload: NpcInteractionRequest):
     logger.info(f"Synthesizing speech for text: {llm_response}")
     try:
         audio_response_b64 = synthesize_speech(
-            text=llm_response, language=payload.language
+            text=llm_response, language=payload.language, npc_id=payload.npc_id
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"TTS error: {e}")
@@ -111,3 +117,24 @@ async def npc_interaction(payload: NpcInteractionRequest):
         llm_response=llm_response,
         audio_response_base64=audio_response_b64,
     )
+
+
+@app.get("/npc_list")
+async def npc_list():
+    """Returns the list of NPCs."""
+    db = get_db()
+    npcs = db["npcs"].find()
+    return [Npc(**npc) for npc in npcs]
+
+
+@app.get("/user_list")
+async def user_list():
+    """Returns the list of users."""
+    db = get_db()
+    users = db["users"].find()
+    return [User(**user) for user in users]
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    close_connection()

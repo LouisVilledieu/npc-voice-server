@@ -9,7 +9,27 @@ services:
       - TRANSCRIBE_PROVIDER=${TRANSCRIBE_PROVIDER:-local}
       - LLM_PROVIDER=${LLM_PROVIDER:-openai}
       - TTS_PROVIDER=${TTS_PROVIDER:-elevenlabs}
+      - MONGO_URI=${MONGO_URI:-mongodb://npc_user:npc_password@mongo:27017/npcdb?authSource=npcdb}
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-npcdb}
     ports:
       - "8000:8000"
     volumes:
       - ./audio_outputs:/app/audio_outputs 
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: npcdb
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data: 
